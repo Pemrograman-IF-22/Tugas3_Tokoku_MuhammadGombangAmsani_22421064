@@ -1,13 +1,50 @@
-import 'package:flutter/material.dart';
+import 'dart:convert';
 
-class HomeScreen extends StatelessWidget {
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:onlenshop/models/product_model.dart';
+
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  List<ProductModel> _product = [];
+
+  @override
+  void initState(){
+    super.initState();
+    fetchProducts();
+  }
+
+  Future<void> fetchProducts() async{
+    final response = await http.get(
+      Uri.parse('https://fakestoreapi.com/products')
+    );
+
+    debugPrint('Response: ${response.body}');
+
+    if(response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+
+      setState(() {
+        _product = data.map(
+          (json) => ProductModel.fromJson(json)
+        ).toList();
+      });
+    }else{
+      throw Exception('Gagal Anjay');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('mytoko'),
+        title: Text('onlenshop'),
       ),
       body: GridView.builder(
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -16,8 +53,10 @@ class HomeScreen extends StatelessWidget {
           crossAxisSpacing: 10,
           mainAxisSpacing: 10,
         ),
-        itemCount: 10,
+        itemCount: _product.length,
         itemBuilder:(context, index){
+          final product = _product[index];
+
           return Card(
             child: Column(
               children: [
@@ -25,7 +64,7 @@ class HomeScreen extends StatelessWidget {
                   height: 180,
                   width: double.infinity,
                   child: Image.network(
-                    'https://fakestoreapi.com/img/81fPKd-2AYL.AC_SL1500.jpg',
+                    product.image,
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -34,7 +73,8 @@ class HomeScreen extends StatelessWidget {
                     horizontal: 8,
                     vertical: 4
                   ),
-                  child: Text('Kategori ${index + 1}', 
+                  child: Text(
+                    product.category, 
                   style: TextStyle(
                     color: Colors.blueGrey
                   ),
@@ -45,10 +85,11 @@ class HomeScreen extends StatelessWidget {
                     horizontal: 8,
                     vertical: 4
                   ),
-                  child: Text('\$20.0', 
+                  child: Text('\$${product.price}', 
                   style: TextStyle(
                     fontSize: 18,
-                    fontWeight: FontWeight.bold
+                    fontWeight: FontWeight.bold,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   ),  
                 ),
@@ -57,7 +98,8 @@ class HomeScreen extends StatelessWidget {
                     horizontal: 8,
                     vertical: 4
                   ),
-                  child: Text('Produk ${index + 1}', 
+                  child: Text(
+                    product.title,
                   style: TextStyle(
                     fontSize: 18,
                     color: Colors.blueGrey
